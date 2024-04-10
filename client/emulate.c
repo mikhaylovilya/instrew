@@ -249,7 +249,8 @@ handle_clone(struct State* state, struct clone_args* uargs, size_t usize) {
     ssize_t res = syscall(__NR_clone, flags, 0, args.parent_tid, args.tls,
                           args.child_tid, 0);
 #else
-#error "clone not implemented for target"
+    ssize_t res = syscall(__NR_clone, flags, 0, args.parent_tid, args.tls,
+                          args.child_tid, 0);
 #endif
 
     if (res < 0) {
