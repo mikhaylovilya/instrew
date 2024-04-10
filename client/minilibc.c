@@ -282,6 +282,76 @@ get_thread_area(void) {
     return tp;
 }
 
+#elif defined(__riscv)
+#define R_RELATIVE R_RISCV_RELATIVE
+#define __asm_syscall(...) \
+	__asm__ __volatile__ ("ecall\n\t" \
+	: "+r"(a0) : __VA_ARGS__ : "memory"); \
+	return a0; \
+
+static size_t syscall0(int n)
+{
+	register size_t a7 __asm__("a7") = n;
+	register size_t a0 __asm__("a0");
+	__asm_syscall("r"(a7))
+}
+
+static size_t syscall1(int n, size_t a)
+{
+	register size_t a7 __asm__("a7") = n;
+	register size_t a0 __asm__("a0") = a;
+	__asm_syscall("r"(a7), "0"(a0))
+}
+
+static size_t syscall2(int n, size_t a, size_t b)
+{
+	register size_t a7 __asm__("a7") = n;
+	register size_t a0 __asm__("a0") = a;
+	register size_t a1 __asm__("a1") = b;
+	__asm_syscall("r"(a7), "0"(a0), "r"(a1))
+}
+
+static size_t syscall3(int n, size_t a, size_t b, size_t c)
+{
+	register size_t a7 __asm__("a7") = n;
+	register size_t a0 __asm__("a0") = a;
+	register size_t a1 __asm__("a1") = b;
+	register size_t a2 __asm__("a2") = c;
+	__asm_syscall("r"(a7), "0"(a0), "r"(a1), "r"(a2))
+}
+
+static size_t syscall4(int n, size_t a, size_t b, size_t c, size_t d)
+{
+	register size_t a7 __asm__("a7") = n;
+	register size_t a0 __asm__("a0") = a;
+	register size_t a1 __asm__("a1") = b;
+	register size_t a2 __asm__("a2") = c;
+	register size_t a3 __asm__("a3") = d;
+	__asm_syscall("r"(a7), "0"(a0), "r"(a1), "r"(a2), "r"(a3))
+}
+
+static size_t syscall5(int n, size_t a, size_t b, size_t c, size_t d, size_t e)
+{
+	register size_t a7 __asm__("a7") = n;
+	register size_t a0 __asm__("a0") = a;
+	register size_t a1 __asm__("a1") = b;
+	register size_t a2 __asm__("a2") = c;
+	register size_t a3 __asm__("a3") = d;
+	register size_t a4 __asm__("a4") = e;
+	__asm_syscall("r"(a7), "0"(a0), "r"(a1), "r"(a2), "r"(a3), "r"(a4))
+}
+
+static size_t syscall6(int n, size_t a, size_t b, size_t c, size_t d, size_t e, size_t f)
+{
+	register size_t a7 __asm__("a7") = n;
+	register size_t a0 __asm__("a0") = a;
+	register size_t a1 __asm__("a1") = b;
+	register size_t a2 __asm__("a2") = c;
+	register size_t a3 __asm__("a3") = d;
+	register size_t a4 __asm__("a4") = e;
+	register size_t a5 __asm__("a5") = f;
+	__asm_syscall("r"(a7), "0"(a0), "r"(a1), "r"(a2), "r"(a3), "r"(a4), "r"(a5))
+}
 #else
 #error
 #endif
