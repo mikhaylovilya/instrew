@@ -4,7 +4,7 @@ if not clang.found()
   warning('unable to find clang; disabling tests')
 endif
 
-foreach arch : ['aarch64', 'x86_64']
+foreach arch : ['aarch64', 'riscv64', 'x86_64']
   subdir(arch)
 
   testcc = [clang, '--target=@0@'.format(triple), '-nostdlib', '-static', '-fuse-ld=lld']
