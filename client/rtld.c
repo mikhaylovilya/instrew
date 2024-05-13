@@ -21,6 +21,10 @@
 #define EM_CURRENT EM_X86_64
 #elif defined(__aarch64__)
 #define EM_CURRENT EM_AARCH64
+#elif defined(__riscv)
+#define EM_CURRENT EM_RISCV
+#else
+#error
 #endif
 #define elf_check_arch(x) ((x)->e_machine == EM_CURRENT)
 
@@ -86,6 +90,8 @@ static const struct PltEntry plt_entries[] = {
 #define PLT_FUNC_SIZE 8
 #elif defined(__aarch64__)
 #define PLT_FUNC_SIZE 8
+#elif defined(__riscv)
+#define PLT_FUNC_SIZE 8
 #else
 #error "currently unsupported architecture"
 #endif
@@ -117,6 +123,8 @@ plt_create(const struct DispatcherInfo* disp_info, void** out_plt) {
 #elif defined(__aarch64__)
         *((uint32_t*) code_ptr+0) = 0x58000011 | (offset << 3); // ldr x17, [pc+off]
         *((uint32_t*) code_ptr+1) = 0xd61f0220; // br x17
+#elif defined(__riscv)
+#error
 #else
 #error
 #endif // defined(__x86_64__)
