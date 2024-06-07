@@ -8,4 +8,6 @@ cases = [
   {'name': 'fork', 'src': files('fork.S')},
   {'name': 'recursion', 'src': files('recursion.S')},
   {'name': 'recursion-callret', 'src': files('recursion.S'), 'instrew_args': ['-callret']},
+  {'name': 'stosb-call', 'src': files('stosb-call.S')},
+  {'name': 'stosb-call-callret', 'src': files('stosb-call.S'), 'instrew_args': ['-callret']},
 ]
