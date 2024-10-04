@@ -208,6 +208,9 @@ public:
         if (iwsc->tsc_stack_alignment != 0)
             mod->setOverrideStackAlignment(iwsc->tsc_stack_alignment);
 #endif
+#if LL_LLVM_MAJOR >= 19
+        mod->setIsNewDbgInfoFormat(true);
+#endif
 
 #if LL_LLVM_MAJOR < 17
         mod->getGlobalList().push_back(pc_base_var);

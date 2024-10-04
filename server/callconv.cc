@@ -690,7 +690,10 @@ llvm::Function* ChangeCallConv(llvm::Function* fn, CallConv cc) {
         for (size_t i = 0; i < callret_calls.size(); i++) {
             llvm::CallInst* call = callret_calls[i];
             auto tgt = call->isMustTailCall() ? tail_fn : call_fn;
-            auto newcall = llvm::CallInst::Create(fn_ty, tgt, {}, "", call);
+            llvm::SmallVector<llvm::Value*, 16> args;
+            for (llvm::Type* ty : fn_ty->params())
+                args.push_back(llvm::UndefValue::get(ty));
+            auto newcall = llvm::CallInst::Create(fn_ty, tgt, args, "", call);
             newcall->setTailCallKind(call->getTailCallKind());
             newcall->setCallingConv(tgt->getCallingConv());
             newcall->setAttributes(tgt->getAttributes());
