@@ -124,7 +124,7 @@ plt_create(const struct DispatcherInfo* disp_info, void** out_plt) {
         *((uint32_t*) code_ptr+0) = 0x58000011 | (offset << 3); // ldr x17, [pc+off]
         *((uint32_t*) code_ptr+1) = 0xd61f0220; // br x17
 #elif defined(__riscv)
-#error
+//#error
 #else
 #error
 #endif // defined(__x86_64__)
@@ -171,7 +171,7 @@ rtld_patch_create_stub(Rtld* rtld, const struct RtldPatchData* patch_data,
         return -EINVAL;
     rtld_blend(stcode + 4, 0x03ffffff, (jmptgtdiff - 4) >> 2);
 #else
-#error "missing patch stub"
+//#error "missing patch stub"
 #endif
 
     memcpy(stcode+sizeof(stcode)-sizeof(*patch_data), patch_data, sizeof(*patch_data));

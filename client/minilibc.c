@@ -284,10 +284,28 @@ get_thread_area(void) {
 
 #elif defined(__riscv)
 #define R_RELATIVE R_RISCV_RELATIVE
+
+//TODO: maybe put this def to common?
+#ifndef SA_RESTORER
+#define SA_RESTORER 0x04000000
+#endif
+
 #define __asm_syscall(...) \
 	__asm__ __volatile__ ("ecall\n\t" \
 	: "+r"(a0) : __VA_ARGS__ : "memory"); \
 	return a0; \
+
+ASM_BLOCK(
+    .weak _DYNAMIC;
+    .hidden _DYNAMIC;
+    .globl _start;
+_start:
+    mv fp, x0;
+    mv a0, sp;
+    la a2, _DYNAMIC;
+    andi sp, sp, 0xfffffffffffffff0;
+    call __start_main;
+);
 
 static size_t syscall0(int n)
 {
@@ -352,6 +370,23 @@ static size_t syscall6(int n, size_t a, size_t b, size_t c, size_t d, size_t e, 
 	register size_t a5 __asm__("a5") = f;
 	__asm_syscall("r"(a7), "0"(a0), "r"(a1), "r"(a2), "r"(a3), "r"(a4), "r"(a5))
 }
+
+int
+set_thread_area(void* tp) {
+    __asm__ volatile ("mv %0, a0\n\t"
+		      "li a0, 0\r\n" :: "r"(tp) : "memory");
+    return 0;
+}
+
+void* get_thread_area(void) {
+#ifdef SYS_set_thread_area
+    void* tp;
+    syscall1(SYS_set_thread_area, tp);
+#else
+    return (void*)-ENOSYS;
+#endif
+}
+
 #else
 #error
 #endif
@@ -810,7 +845,9 @@ sigaction(int num, const struct sigaction* restrict act,
     if (act) {
         kact = *act;
         kact.sa_flags |= SA_RESTORER;
-        kact.sa_restorer = __restore;
+#ifndef __riscv
+	kact.sa_restorer = __restore;
+#endif
         act = &kact;
     }
     return syscall4(__NR_rt_sigaction, num, (uintptr_t) act, (uintptr_t) oact,

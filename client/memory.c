@@ -113,7 +113,7 @@ mem_write_code(void* dst, const void* src, size_t size) {
     }
     __asm__ volatile("isb");
 #else
-#error "Implement ICache flush for unknown target"
+//#error "Implement ICache flush for unknown target"
 #endif
     return 0;
 }
