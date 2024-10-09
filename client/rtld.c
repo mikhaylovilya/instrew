@@ -124,7 +124,7 @@ plt_create(const struct DispatcherInfo* disp_info, void** out_plt) {
         *((uint32_t*) code_ptr+0) = 0x58000011 | (offset << 3); // ldr x17, [pc+off]
         *((uint32_t*) code_ptr+1) = 0xd61f0220; // br x17
 #elif defined(__riscv)
-//#error
+	*((uint32_t*) code_ptr+0) = 0x000000ef | (offset << 16); // jal x0, offset
 #else
 #error
 #endif // defined(__x86_64__)

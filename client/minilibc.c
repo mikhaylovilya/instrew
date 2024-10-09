@@ -296,15 +296,61 @@ get_thread_area(void) {
 	return a0; \
 
 ASM_BLOCK(
+    .text;
+    .type _start, %function;
     .weak _DYNAMIC;
     .hidden _DYNAMIC;
     .globl _start;
 _start:
     mv fp, x0;
     mv a0, sp;
-    la a2, _DYNAMIC;
+    lla a1, _DYNAMIC;
     andi sp, sp, 0xfffffffffffffff0;
-    call __start_main;
+    jal __start_main;
+
+//    li a7, 93;
+//    ecall
+);
+
+//borrowed from: https://github.com/riscvarchive/riscv-musl/blob/staging/src/thread/riscv64/clone.s
+//
+ASM_BLOCK(
+    .global __clone;
+    .type  __clone, %function;
+__clone:
+        // Save func and arg to stack
+        addi a1, a1, -16;
+        sd a0, 0(a1);
+        sd a3, 8(a1);
+
+        // Call SYS_clone
+        mv a0, a2;
+        mv a2, a4;
+        mv a3, a5;
+        mv a4, a6;
+        li a7, 220; // SYS_clone
+        ecall;
+
+        beqz a0, 1f;
+        // Parent
+        ret;
+
+        // Child
+1:      ld a1, 0(sp);
+        ld a0, 8(sp);
+        jalr a1;
+
+        // Exit
+        li a7, 93; // SYS_exit
+        ecall;
+);
+
+ASM_BLOCK(
+    .globl __restore;
+    .type __rectore, %function;
+__restore:
+    li a0, __NR_rt_sigreturn;
+    ecall;
 );
 
 static size_t syscall0(int n)
