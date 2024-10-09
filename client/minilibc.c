@@ -296,15 +296,77 @@ get_thread_area(void) {
 	return a0; \
 
 ASM_BLOCK(
+    .text;
+    .type _start, %function;
     .weak _DYNAMIC;
     .hidden _DYNAMIC;
     .globl _start;
 _start:
     mv fp, x0;
     mv a0, sp;
-    la a2, _DYNAMIC;
+    lla a1, _DYNAMIC;
     andi sp, sp, 0xfffffffffffffff0;
-    call __start_main;
+    jal __start_main;
+
+//    li a7, 93;
+//    ecall
+);
+//  ASM_BLOCK(
+//    .text;
+//    .global _start\n"
+//    ".type _start,%function\n"
+//    "_start:\n"
+//     .weak __global_pointer$\n"
+//    ".hidden __global_pointer$\n"
+//    ".option push\n"
+//    ".option norelax\n\t"
+//    "lla gp, __global_pointer$\n"
+//    ".option pop\n\t"
+//    "mv a0, sp\n"
+//    ".weak _DYNAMIC\n"
+//    ".hidden _DYNAMIC\n\t"
+//    "lla a1, _DYNAMIC\n\t"
+//    "andi sp, sp, -16\n\t"
+//    "jal __start_main"
+//  );
+
+ASM_BLOCK(
+    .global __clone;
+    .type  __clone, %function;
+__clone:
+        // Save func and arg to stack
+        addi a1, a1, -16;
+        sd a0, 0(a1);
+        sd a3, 8(a1);
+
+        // Call SYS_clone
+        mv a0, a2;
+        mv a2, a4;
+        mv a3, a5;
+        mv a4, a6;
+        li a7, 220; // SYS_clone
+        ecall;
+
+        beqz a0, 1f;
+        // Parent
+        ret;
+
+        // Child
+1:      ld a1, 0(sp);
+        ld a0, 8(sp);
+        jalr a1;
+
+        // Exit
+        li a7, 93; // SYS_exit
+        ecall;
+);
+
+ASM_BLOCK(
+    .globl __restore;
+    .type __rectore, %function;
+__restore:
+    li a0, __NR_rt_sigreturn;
+    ecall;
 );
 
 static size_t syscall0(int n)
@@ -912,6 +974,7 @@ GNU_FORCE_EXTERN
 void
 __start_main(const size_t* initial_stack, const size_t* dynv)
 {
+    printf("__start_main\n");
     int argc = (int) initial_stack[0];
     char** local_environ = (char**) &initial_stack[argc + 2];
 
@@ -955,12 +1018,14 @@ __start_main(const size_t* initial_stack, const size_t* dynv)
             *((size_t*) (base + rel[0])) += base;
         }
         for (; relasz; rela += 3, relasz -= 3*sizeof(size_t)) {
+	    printf("R_RELATIVE = %d\n", R_RELATIVE);
+	    printf("rela = %zu\n", rela[1]);
             if (ELF_R_TYPE(rela[1]) != R_RELATIVE)
                 _exit(-ENOEXEC);
             *((size_t*) (base + rela[0])) = base + rela[2];
         }
     }
-
+    
     __asm__ volatile("" ::: "memory"); // memory barrier for compiler
     environ = local_environ;
 
