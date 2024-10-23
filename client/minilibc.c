@@ -295,40 +295,41 @@ get_thread_area(void) {
 	: "+r"(a0) : __VA_ARGS__ : "memory"); \
 	return a0; \
 
-ASM_BLOCK(
-    .text;
-    .type _start, %function;
-    .weak _DYNAMIC;
-    .hidden _DYNAMIC;
-    .globl _start;
-_start:
-    mv fp, x0;
-    mv a0, sp;
-    lla a1, _DYNAMIC;
-    andi sp, sp, 0xfffffffffffffff0;
-    jal __start_main;
-
+//ASM_BLOCK(
+//    .text;
+//    .type _start, %function;
+//    .weak _DYNAMIC;
+//    .hidden _DYNAMIC;
+//    .globl _start;
+//_start:
+//    mv fp, x0;
+//    mv a0, sp;
+//    lla a1, _DYNAMIC;
+//    andi sp, sp, 0xfffffffffffffff0;
+//    jal __start_main;
+//
 //    li a7, 93;
 //    ecall
+//);
+
+ASM_BLOCK(
+  .text;
+  .global _start;
+  .type _start, %function;
+  _start:
+	.weak __global_pointer$;
+	.hidden __global_pointer$;
+	.option push;
+	.option norelax;
+	lla gp, __global_pointer$;
+	.option pop;
+	 mv a0, sp;
+	.weak _DYNAMIC;
+	.hidden _DYNAMIC;
+	lla a1, _DYNAMIC;
+	andi sp, sp, -16;
+	tail __start_main;
 );
-//  ASM_BLOCK(
-//    .text;
-//    .global _start\n"
-//    ".type _start,%function\n"
-//    "_start:\n"
-//     .weak __global_pointer$\n"
-//    ".hidden __global_pointer$\n"
-//    ".option push\n"
-//    ".option norelax\n\t"
-//    "lla gp, __global_pointer$\n"
-//    ".option pop\n\t"
-//    "mv a0, sp\n"
-//    ".weak _DYNAMIC\n"
-//    ".hidden _DYNAMIC\n\t"
-//    "lla a1, _DYNAMIC\n\t"
-//    "andi sp, sp, -16\n\t"
-//    "jal __start_main"
-//  );
 
 ASM_BLOCK(
     .global __clone;
