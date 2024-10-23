@@ -366,7 +366,7 @@ public:
 
 
 int main(int argc, char** argv) {
-    printf("server main");
+    printf("server main\n");
     llvm::cl::HideUnrelatedOptions({&InstrewCategory, &CodeGenCategory});
     auto& optionMap = llvm::cl::getRegisteredOptions();
     optionMap["time-passes"]->setHiddenFlag(llvm::cl::Hidden);
