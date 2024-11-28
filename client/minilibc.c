@@ -944,7 +944,9 @@ size_t getpagesize(void) {
 }
 
 // May be overriden by an architecture-specific implementation.
+#ifndef __riscv
 __attribute__((weak)) GNU_FORCE_EXTERN
+#endif
 void* memset(void* s, int c, size_t n) {
     unsigned char* sptr = s;
     for (; n > 0; n--, sptr++)
@@ -1018,14 +1020,18 @@ __start_main(const size_t* initial_stack, const size_t* dynv)
                 _exit(-ENOEXEC);
             *((size_t*) (base + rel[0])) += base;
         }
-#if defined (__riscv)
-	relasz -= 24; //magic
-#endif		          
+
+		int c = 0;
+//#if defined (__riscv)
+//	relasz -= 24; //magic
+//#endif		          
         for (; relasz; rela += 3, relasz -= 3*sizeof(size_t)) {
             if (ELF_R_TYPE(rela[1]) != R_RELATIVE)
                 _exit(-ENOEXEC);
             *((size_t*) (base + rela[0])) = base + rela[2];
+			c++;
         }
+		printf("count = %u\n", c);
     }
 
     __asm__ volatile("" ::: "memory"); // memory barrier for compiler
