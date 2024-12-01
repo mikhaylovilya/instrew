@@ -16,7 +16,6 @@
 
 
 int main(int argc, char** argv) {
-    printf("client main\n");
     int i;
     int retval;
 

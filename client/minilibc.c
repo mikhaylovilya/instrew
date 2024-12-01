@@ -977,7 +977,6 @@ GNU_FORCE_EXTERN
 void
 __start_main(const size_t* initial_stack, const size_t* dynv)
 {
-    printf("__start_main\n");
     int argc = (int) initial_stack[0];
     char** local_environ = (char**) &initial_stack[argc + 2];
 
@@ -1021,17 +1020,11 @@ __start_main(const size_t* initial_stack, const size_t* dynv)
             *((size_t*) (base + rel[0])) += base;
         }
 
-		int c = 0;
-//#if defined (__riscv)
-//	relasz -= 24; //magic
-//#endif		          
         for (; relasz; rela += 3, relasz -= 3*sizeof(size_t)) {
             if (ELF_R_TYPE(rela[1]) != R_RELATIVE)
                 _exit(-ENOEXEC);
             *((size_t*) (base + rela[0])) = base + rela[2];
-			c++;
         }
-		printf("count = %u\n", c);
     }
 
     __asm__ volatile("" ::: "memory"); // memory barrier for compiler

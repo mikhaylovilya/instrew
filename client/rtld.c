@@ -91,14 +91,13 @@ static const struct PltEntry plt_entries[] = {
 #elif defined(__aarch64__)
 #define PLT_FUNC_SIZE 8
 #elif defined(__riscv)
-#define PLT_FUNC_SIZE 8
+#define PLT_FUNC_SIZE 16
 #else
 #error "currently unsupported architecture"
 #endif
 
 static int
 plt_create(const struct DispatcherInfo* disp_info, void** out_plt) {
-//	printf("plt_create\n");
     size_t plt_entry_count = sizeof(plt_entries) / sizeof(plt_entries[0]) - 1;
     size_t code_size = plt_entry_count * PLT_FUNC_SIZE;
     size_t data_offset = ALIGN_UP(code_size, 0x40u);
@@ -111,8 +110,6 @@ plt_create(const struct DispatcherInfo* disp_info, void** out_plt) {
         void* code_ptr = (uint8_t*) plt + i * PLT_FUNC_SIZE;
         uintptr_t* data_ptr = &plt[data_offset / sizeof(uintptr_t) + i];
         ptrdiff_t offset = (char*) data_ptr - (char*) code_ptr;
-
-//		printf("offset = %p, ", offset);
 
         if (i == 0)
             *data_ptr = disp_info->quick_dispatch_func;
@@ -127,9 +124,12 @@ plt_create(const struct DispatcherInfo* disp_info, void** out_plt) {
         *((uint32_t*) code_ptr+0) = 0x58000011 | (offset << 3); // ldr x17, [pc+off]
         *((uint32_t*) code_ptr+1) = 0xd61f0220; // br x17
 #elif defined(__riscv)
-		*((uint32_t*) code_ptr+0) = 0x0000006f | (offset << 20); // jal x0, offset
+		*((uint32_t*) code_ptr+0) = 0x00000297 | ((offset + 0x800) & 0xfffff000); // auipc, t0, offset[31:12]
+		*((uint32_t*) code_ptr+1) = 0x0002b283 | (offset << 20); // ld t0, offset[11:0](t0)
+		*((uint32_t*) code_ptr+2) = 0x00028067; // jalr, x0, 0(t0)
+		*((uint32_t*) code_ptr+3) = 0x00000013; // nop
+//		*((uint32_t*) code_ptr+2) = 0x00028067 | (offset << 20); // jalr, x0, offset[11:0](t0)
 //		uint32_t tmp = 0x0000006f | (offset << 20); 
-//		printf("tmp = %p\n", tmp);
 #else
 #error
 #endif // defined(__x86_64__)
@@ -357,9 +357,6 @@ rtld_elf_add_stub(uintptr_t sym, uintptr_t* out_stub) {
 
 static int
 rtld_reloc_at(const struct RtldPatchData* patch_data, void* tgt, void* sym) {
-	
-//	printf("rtld_reloc_at\n");
-	
     uint64_t syma = (uintptr_t) sym + patch_data->addend;
     uint64_t pc = patch_data->patch_addr;
     int64_t prel_syma = syma - (int64_t) pc;
@@ -457,19 +454,19 @@ rtld_reloc_at(const struct RtldPatchData* patch_data, void* tgt, void* sym) {
         break;
 #elif defined(__riscv)
 	case R_RISCV_32_PCREL:
-		printf("R_RISCV_32_PCREL\n");
-		printf("tgt = %p\n", tgt);
-		printf("*tgt before 32pcrel = %p, ", *((uint32_t*)tgt));
-		printf("sym = %p, ", sym);
-		printf("add = %p, ", patch_data->addend);
-		printf("pc = %p, ", pc);
-		printf("prel_syma = %p, ", prel_syma);
+//		printf("R_RISCV_32_PCREL\n");
+//		printf("tgt = %p\n", tgt);
+//		printf("*tgt before 32pcrel = %p, ", *((uint32_t*)tgt));
+//		printf("sym = %p, ", sym);
+//		printf("add = %p, ", patch_data->addend);
+//		printf("pc = %p, ", pc);
+//		printf("prel_syma = %p, ", prel_syma);
 //		res = *((uint64_t*)sym) + patch_data->addend + 
 
         if (!rtld_elf_signed_range(prel_syma, 32, "R_RISCV_32_PCREL"))
 			return -EINVAL;
 		rtld_blend(tgt, 0xffffffff, prel_syma);
-		printf("*tgt after = %p\n", *((uint32_t*)tgt));
+//		printf("*tgt after = %p\n", *((uint32_t*)tgt));
 		break;
 	case R_RISCV_ADD32:
 		printf("tgt before add32 = %p, ", *((uint32_t*)tgt));
