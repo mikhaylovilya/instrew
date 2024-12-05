@@ -54,6 +54,7 @@ GNU_FORCE_EXTERN
 uintptr_t
 resolve_func(struct CpuState* cpu_state, uintptr_t addr,
              struct RtldPatchData* patch_data) {
+	printf("resolve_func\n");
     struct State* state = cpu_state->state;
 
     if (patch_data)
@@ -74,11 +75,15 @@ resolve_func(struct CpuState* cpu_state, uintptr_t addr,
             goto error;
 
         retval = rtld_add_object(&state->rtld, obj_base, obj_size, addr);
-        if (retval < 0)
+        if (retval < 0) {
+//			printf("rtld_add_object error\n");
             goto error;
+		}
         retval = rtld_resolve(&state->rtld, addr, &func);
-        if (retval < 0)
+        if (retval < 0) {
+//			printf("rtld_resolve error\n");
             goto error;
+		}
 
         if (UNLIKELY(state->tc.tc_profile)) {
             clock_gettime(CLOCK_MONOTONIC, &end_time);
@@ -120,9 +125,10 @@ inline void dispatch_cdecl(uint64_t* cpu_regs) {
     uintptr_t hash = QUICK_TLB_HASH(addr);
 
     uintptr_t func = cpu_state->quick_tlb[hash][1];
-    if (UNLIKELY(cpu_state->quick_tlb[hash][0] != addr))
+    if (UNLIKELY(cpu_state->quick_tlb[hash][0] != addr)) {
+		printf("dispatch_cdecl: unlikely\n");
         func = resolve_func(cpu_state, addr, NULL);
-
+	}
     void(* func_p)(void*);
     *((void**) &func_p) = (void*) func;
     func_p(cpu_regs);
@@ -460,6 +466,7 @@ dispatch_aapcsx_fullresolve:
 
 const struct DispatcherInfo*
 dispatch_get(struct State* state) {
+//	printf("dispatch_get :)\n");
     static const struct DispatcherInfo infos[] = {
         [0] = {
             .loop_func = dispatch_cdecl_loop,
