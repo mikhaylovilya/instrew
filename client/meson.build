@@ -21,10 +21,14 @@ client_c_args = ['-D_GNU_SOURCE', '-nostdlib', '-fno-builtin',
 client_link_args = ['-nostdlib', '-nostartfiles', '-lgcc']
 
 cc = meson.get_compiler('c')
-if cc.has_argument('-static-pie')
-  client_link_args += ['-static-pie']
-else
-  client_link_args += ['-Wl,-static', '-Wl,-pie', '-Wl,--no-dynamic-linker', '-Wl,-z,text']
+if host_machine.cpu_family() == 'riscv64'
+   client_link_args += ['-Wl,-static', '-Wl,-pie', '-Wl,--no-dynamic-linker', '-Wl,-z,text']
+elif
+   if cc.has_argument('-static-pie')
+      client_link_args += ['-static-pie']
+   else
+      client_link_args += ['-Wl,-static', '-Wl,-pie', '-Wl,--no-dynamic-linker', '-Wl,-z,text']
+   endif
 endif
 
 if host_machine.cpu_family() == 'x86_64'
