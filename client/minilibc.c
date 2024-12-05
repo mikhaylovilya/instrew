@@ -295,41 +295,38 @@ get_thread_area(void) {
 	: "+r"(a0) : __VA_ARGS__ : "memory"); \
 	return a0; \
 
-//ASM_BLOCK(
-//    .text;
-//    .type _start, %function;
-//    .weak _DYNAMIC;
-//    .hidden _DYNAMIC;
-//    .globl _start;
-//_start:
-//    mv fp, x0;
-//    mv a0, sp;
-//    lla a1, _DYNAMIC;
-//    andi sp, sp, 0xfffffffffffffff0;
-//    jal __start_main;
-//
-//    li a7, 93;
-//    ecall
-//);
-
 ASM_BLOCK(
-  .text;
-  .global _start;
-  .type _start, %function;
-  _start:
-	.weak __global_pointer$;
-	.hidden __global_pointer$;
-	.option push;
-	.option norelax;
-	lla gp, __global_pointer$;
-	.option pop;
-	 mv a0, sp;
-	.weak _DYNAMIC;
-	.hidden _DYNAMIC;
-	lla a1, _DYNAMIC;
-	andi sp, sp, -16;
-	tail __start_main;
+    .text;
+    .type _start, %function;
+    .weak _DYNAMIC;
+    .hidden _DYNAMIC;
+    .globl _start;
+_start:
+    mv fp, x0;
+    mv a0, sp;
+    lla a1, _DYNAMIC;
+    andi sp, sp, 0xfffffffffffffff0;
+    jal __start_main;
 );
+
+//ASM_BLOCK(
+//  .text;
+//  .global _start;
+//  .type _start, %function;
+//  _start:
+//	.weak __global_pointer$;
+//	.hidden __global_pointer$;
+//	.option push;
+//	.option norelax;
+//	lla gp, __global_pointer$;
+//	.option pop;
+//	 mv a0, sp;
+//	.weak _DYNAMIC;
+//	.hidden _DYNAMIC;
+//	lla a1, _DYNAMIC;
+//	andi sp, sp, -16;
+//	tail __start_main;
+//);
 
 ASM_BLOCK(
     .global __clone;
@@ -1019,7 +1016,6 @@ __start_main(const size_t* initial_stack, const size_t* dynv)
                 _exit(-ENOEXEC);
             *((size_t*) (base + rel[0])) += base;
         }
-
         for (; relasz; rela += 3, relasz -= 3*sizeof(size_t)) {
             if (ELF_R_TYPE(rela[1]) != R_RELATIVE)
                 _exit(-ENOEXEC);

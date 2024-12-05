@@ -76,7 +76,6 @@ resolve_func(struct CpuState* cpu_state, uintptr_t addr,
         retval = rtld_add_object(&state->rtld, obj_base, obj_size, addr);
         if (retval < 0)
             goto error;
-
         retval = rtld_resolve(&state->rtld, addr, &func);
         if (retval < 0)
             goto error;
@@ -121,9 +120,8 @@ inline void dispatch_cdecl(uint64_t* cpu_regs) {
     uintptr_t hash = QUICK_TLB_HASH(addr);
 
     uintptr_t func = cpu_state->quick_tlb[hash][1];
-    if (UNLIKELY(cpu_state->quick_tlb[hash][0] != addr)) {
+    if (UNLIKELY(cpu_state->quick_tlb[hash][0] != addr))
         func = resolve_func(cpu_state, addr, NULL);
-	}
     void(* func_p)(void*);
     *((void**) &func_p) = (void*) func;
     func_p(cpu_regs);
