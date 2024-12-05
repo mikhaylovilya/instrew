@@ -6,6 +6,9 @@ PLT_ENTRY("__divti3", __divti3) // libgcc
 PLT_ENTRY("__udivti3", __udivti3) // libgcc
 PLT_ENTRY("__modti3", __modti3) // libgcc
 PLT_ENTRY("__umodti3", __umodti3) // libgcc
+PLT_ENTRY("__muldi3", __muldi3) // libgcc
+PLT_ENTRY("__umoddi3", __umoddi3) // libgcc
+PLT_ENTRY("__udivdi3", __udivdi3) // libgcc
 PLT_ENTRY("floorf", floorf) // math.c
 PLT_ENTRY("floor", floor) // math.c
 PLT_ENTRY("ceilf", ceilf) // math.c

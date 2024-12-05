@@ -337,12 +337,12 @@ ASM_BLOCK(
     .global __clone;
     .type  __clone, %function;
 __clone:
-        // Save func and arg to stack
+      // Save func and arg to stack
         addi a1, a1, -16;
         sd a0, 0(a1);
         sd a3, 8(a1);
 
-        // Call SYS_clone
+      // Call SYS_clone
         mv a0, a2;
         mv a2, a4;
         mv a3, a5;
@@ -351,15 +351,15 @@ __clone:
         ecall;
 
         beqz a0, 1f;
-        // Parent
+      // Parent
         ret;
 
-        // Child
+      // Child
 1:      ld a1, 0(sp);
         ld a0, 8(sp);
         jalr a1;
 
-        // Exit
+      // Exit
         li a7, 93; // SYS_exit
         ecall;
 );

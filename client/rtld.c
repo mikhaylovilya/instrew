@@ -292,6 +292,7 @@ rtld_elf_resolve_sym(RtldElf* re, size_t symtab_idx, size_t sym_idx,
     if (sym->st_shndx == SHN_UNDEF) {
         const char* name = "<unknown>";
         rtld_elf_resolve_str(re, sym_shdr->sh_link, sym->st_name, &name);
+//		printf("name = %s\n", name);
         if (!strncmp(name, "glob_", 5)) {
             dprintf(2, "undefined symbol reference to %s\n", name);
             return -EINVAL;
@@ -469,31 +470,32 @@ rtld_reloc_at(const struct RtldPatchData* patch_data, void* tgt, void* sym) {
 //		printf("*tgt after = %p\n", *((uint32_t*)tgt));
 		break;
 	case R_RISCV_ADD32:
-		printf("tgt before add32 = %p, ", *((uint32_t*)tgt));
-		res = syma + (*(uint64_t*)pc);
-		printf("sym = %p, ", sym);
-		printf("add = %p, ", patch_data->addend);
-		printf("*pc = %p, ", (*(uint64_t*)pc));
-		printf("res = %p, ", res);
+//		printf("tgt before add32 = %p, ", *((uint32_t*)tgt));
+//		res = syma + (*(uint64_t*)pc);i
+//		printf("sym = %p, ", sym);
+//		printf("add = %p, ", patch_data->addend);
+//		printf("*pc = %p, ", (*(uint32_t*)pc));
+//		printf("res = %p, ", res);
 
 //	    if (!rtld_elf_signed_range(res, 32, "R_RISCV_ADD32"))
 //			return -EINVAL;
-		rtld_blend(tgt, 0xffffffff, res);
-//		*((uint32_t*)tgt) += (uint32_t) syma;
-		printf("tgt after = %p\n", *((uint32_t*)tgt));
+//		rtld_blend(tgt, 0xffffffff, );
+		*((uint32_t*)tgt) += (uint32_t) syma;
+//		printf("tgt after = %p\n", *((uint32_t*)tgt));
 		break;
 	case R_RISCV_SUB32:
-		printf("tgt before sub32 = %p, ", *((uint32_t*)tgt));
-		res = (*(uint64_t*)pc) - (uint64_t)sym - (uint64_t)patch_data->addend;
-		printf("sym = %p, ", sym);
-		printf("add = %p, ", patch_data->addend);
-		printf("*pc = %p, ", (*(uint64_t*)pc));
-		printf("res = %p, ", res);
+//		printf("tgt before sub32 = %p, ", *((uint32_t*)tgt));
+//		res = (*(uint64_t*)pc) - (uint64_t)sym - (uint64_t)patch_data->addend;
+//		printf("sym = %p, ", sym);
+//		printf("add = %p, ", patch_data->addend);
+//		printf("*pc = %p, ", (*(uint32_t*)pc));
+//		printf("res = %p, ", res);
 
 //	    if (!rtld_elf_signed_range(res, 32, "R_RISCV_ADD32"))
 //			return -EINVAL;
-		rtld_blend(tgt, 0xffffffff, res);
-		printf("tgt after = %p\n", *((uint32_t*)tgt));
+		*((uint32_t*)tgt) -= (uint32_t) syma;
+//		rtld_blend(tgt, 0xffffffff, res);
+//		printf("tgt after = %p\n", *((uint32_t*)tgt));
 
 		break;
 	case R_RISCV_CALL_PLT:
@@ -868,7 +870,6 @@ rtld_resolve(Rtld* r, uintptr_t addr, void** out_entry) {
 void
 rtld_patch(struct RtldPatchData* patch_data, void* sym) {
     // Ignore relocations failures and cases where nothing is to patch.
-	printf("rtld_patch: sym = %p\n");
     char reloc_buf[8];
     if (!patch_data)
         return;
