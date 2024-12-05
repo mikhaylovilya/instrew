@@ -457,8 +457,9 @@ rtld_reloc_at(const struct RtldPatchData* patch_data, void* tgt, void* sym) {
         break;
 #elif defined(__riscv)
 	case R_RISCV_32_PCREL:
-//		printf("R_RISCV_32_PCREL\n");
-//		printf("tgt before 32pcrel = %p, ", *((uint32_t*)tgt));
+		printf("R_RISCV_32_PCREL\n");
+		printf("tgt = %p\n", tgt);
+		printf("*tgt before 32pcrel = %p, ", *((uint32_t*)tgt));
 		printf("sym = %p, ", sym);
 		printf("add = %p, ", patch_data->addend);
 		printf("pc = %p, ", pc);
@@ -467,8 +468,8 @@ rtld_reloc_at(const struct RtldPatchData* patch_data, void* tgt, void* sym) {
 
         if (!rtld_elf_signed_range(prel_syma, 32, "R_RISCV_32_PCREL"))
 			return -EINVAL;
-		rtld_blend(tgt, 0xffffffffff, prel_syma);
-//		printf("tgt after = %p\n", *((uint32_t*)tgt));
+		rtld_blend(tgt, 0xffffffff, prel_syma);
+		printf("*tgt after = %p\n", *((uint32_t*)tgt));
 		break;
 	case R_RISCV_ADD32:
 		printf("tgt before add32 = %p, ", *((uint32_t*)tgt));
@@ -499,17 +500,22 @@ rtld_reloc_at(const struct RtldPatchData* patch_data, void* tgt, void* sym) {
 
 		break;
 	case R_RISCV_CALL_PLT:
-//		printf("tgt before call_plt = %p, ", *((uint32_t*)tgt));
-//		res = syma - pc;
-		printf("sym = %p, ", sym);
-		printf("add = %p, ", patch_data->addend);
-		printf("pc = %p, ", pc);
-		printf("prel_syma = %p, ", prel_syma);
+//		printf("tgt = %p\n", tgt + 4);
+//		printf("*tgt after = %p\n", *((uint32_t*)tgt));
+//		printf("*(tgt + 4) before call_plt = %p, ", *((uint32_t*)tgt + 4));
+//		printf("sym = %p, ", sym);
+//		printf("add = %p, ", patch_data->addend);
+//		printf("pc = %p, ", pc);
+//		printf("prel_syma = %p, ", prel_syma);
 
-	    if (!rtld_elf_signed_range(res, 32, "R_RISCV_ADD32"))
+	    if (!rtld_elf_signed_range(prel_syma, 32, "R_RISCV_CALL_PLT"))
 			return -EINVAL;
-		rtld_blend(tgt, 0xffffffffff, prel_syma);
-//		printf("tgt after = %p\n", *((uint32_t*)tgt));
+
+		rtld_blend(tgt + 4, 0xfff00000 , prel_syma << 20);
+		rtld_blend(tgt, 0xfffff000, prel_syma + 0x800);
+
+//		printf("*tgt after = %p\n", *((uint32_t*)tgt));
+//		printf("*(tgt + 4) after = %p\n", *((uint32_t*)tgt + 4));
 	
 		break;
 #endif
