@@ -18,7 +18,7 @@ endif
 
 client_c_args = ['-D_GNU_SOURCE', '-nostdlib', '-fno-builtin',
                  '-fno-stack-protector', '-fomit-frame-pointer', '-fPIC']
-client_link_args = ['-nostdlib', '-nostartfiles', '-lgcc']
+client_link_args = ['-nostdlib', '-nostartfiles', '-lgcc', '-latomic']
 
 cc = meson.get_compiler('c')
 if host_machine.cpu_family() == 'riscv64'

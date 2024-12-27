@@ -470,6 +470,32 @@ rtld_reloc_at(const struct RtldPatchData* patch_data, void* tgt, void* sym) {
 		rtld_blend(tgt + 4, 0xfff00000 , prel_syma << 20);
 		rtld_blend(tgt, 0xfffff000, prel_syma + 0x800);
 		break;
+	case R_RISCV_SET6:
+		rtld_blend(tgt, 0xff >> 2, syma);
+		break;
+	case R_RISCV_SUB6:
+		*((uint8_t*)tgt) -= syma;
+		break;
+	case R_RISCV_SET8:
+		rtld_blend(tgt, 0xff, syma);
+		break;
+	case R_RISCV_SUB8:
+		*((uint8_t*)tgt) -= syma;
+		break;
+	case R_RISCV_SET16:
+		rtld_blend(tgt, 0xffff, syma);
+		break;
+	case R_RISCV_SUB16:
+		*((uint16_t*)tgt) -= syma;
+		break;
+	case R_RISCV_PCREL_HI20:
+		if (!rtld_elf_signed_range(prel_syma, 32, "R_RISCV_CALL_PLT"))
+			return -EINVAL;
+		rtld_blend(tgt + 4, 0xfff00000 , prel_syma << 20);
+		rtld_blend(tgt, 0xfffff000, prel_syma + 0x800);
+		break;
+	case R_RISCV_PCREL_LO12_I:
+		break;
 #endif
     default:
         dprintf(2, "unhandled relocation %u\n", patch_data->rel_type);
@@ -488,6 +514,7 @@ rtld_elf_process_rela(RtldElf* re, int rela_idx) {
         return -EINVAL;
     if (rela_shdr->sh_entsize != sizeof(Elf64_Rela))
         return -EINVAL;
+
 
     Elf64_Rela* elf_rela = (Elf64_Rela*) ((uint8_t*) re->base + rela_shdr->sh_offset);
     Elf64_Rela* elf_rela_end = elf_rela + rela_shdr->sh_size / sizeof(Elf64_Rela);
@@ -691,8 +718,8 @@ int rtld_add_object(Rtld* r, void* obj_base, size_t obj_size, uint64_t skew) {
     size_t totalign = 1;
     for (i = 0, elf_shnt = re.re_shdr; i < re.re_ehdr->e_shnum; i++, elf_shnt++) {
         // We don't support more flags
-        if (elf_shnt->sh_flags & ~(SHF_ALLOC|SHF_EXECINSTR|SHF_MERGE|SHF_STRINGS|SHF_INFO_LINK)) {
-            dprintf(2, "unsupported section flags\n");
+        if (elf_shnt->sh_flags & ~(SHF_ALLOC|SHF_EXECINSTR|SHF_MERGE|SHF_STRINGS|SHF_INFO_LINK|SHF_WRITE)) {
+            dprintf(2, "unsupported section flags: %p\n", elf_shnt->sh_flags);
             return -EINVAL;
         }
         if (elf_shnt->sh_flags & SHF_ALLOC) {
