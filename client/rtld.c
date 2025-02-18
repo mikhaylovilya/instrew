@@ -128,8 +128,6 @@ plt_create(const struct DispatcherInfo* disp_info, void** out_plt) {
 		*((uint32_t*) code_ptr+1) = 0x0002b283 | (offset << 20); // ld t0, offset[11:0](t0)
 		*((uint32_t*) code_ptr+2) = 0x00028067; // jalr, x0, 0(t0)
 		*((uint32_t*) code_ptr+3) = 0x00000013; // nop
-//		*((uint32_t*) code_ptr+2) = 0x00028067 | (offset << 20); // jalr, x0, offset[11:0](t0)
-//		uint32_t tmp = 0x0000006f | (offset << 20); 
 #else
 #error
 #endif // defined(__x86_64__)
@@ -149,7 +147,6 @@ plt_create(const struct DispatcherInfo* disp_info, void** out_plt) {
 static int
 rtld_patch_create_stub(Rtld* rtld, const struct RtldPatchData* patch_data,
                        uintptr_t* out_stub) {
-	printf("rtld_patch_create_stub\n");
     _Static_assert(_Alignof(struct RtldPatchData) <= 0x10,
                    "patch data alignment too big");
     _Alignas(0x10) uint8_t stcode[0x10 + sizeof(*patch_data)];
@@ -176,8 +173,9 @@ rtld_patch_create_stub(Rtld* rtld, const struct RtldPatchData* patch_data,
     if (!rtld_elf_signed_range(jmptgtdiff - 4, 28, "R_AARCH64_JUMP26"))
         return -EINVAL;
     rtld_blend(stcode + 4, 0x03ffffff, (jmptgtdiff - 4) >> 2);
+#elif defined(__riscv)
 #else
-//#error "missing patch stub"
+#error "missing patch stub"
 #endif
 
     memcpy(stcode+sizeof(stcode)-sizeof(*patch_data), patch_data, sizeof(*patch_data));
@@ -292,7 +290,6 @@ rtld_elf_resolve_sym(RtldElf* re, size_t symtab_idx, size_t sym_idx,
     if (sym->st_shndx == SHN_UNDEF) {
         const char* name = "<unknown>";
         rtld_elf_resolve_str(re, sym_shdr->sh_link, sym->st_name, &name);
-//		printf("name = %s\n", name);
         if (!strncmp(name, "glob_", 5)) {
             dprintf(2, "undefined symbol reference to %s\n", name);
             return -EINVAL;
@@ -514,7 +511,6 @@ rtld_elf_process_rela(RtldElf* re, int rela_idx) {
         return -EINVAL;
     if (rela_shdr->sh_entsize != sizeof(Elf64_Rela))
         return -EINVAL;
-
 
     Elf64_Rela* elf_rela = (Elf64_Rela*) ((uint8_t*) re->base + rela_shdr->sh_offset);
     Elf64_Rela* elf_rela_end = elf_rela + rela_shdr->sh_size / sizeof(Elf64_Rela);

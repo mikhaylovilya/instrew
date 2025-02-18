@@ -122,6 +122,7 @@ inline void dispatch_cdecl(uint64_t* cpu_regs) {
     uintptr_t func = cpu_state->quick_tlb[hash][1];
     if (UNLIKELY(cpu_state->quick_tlb[hash][0] != addr))
         func = resolve_func(cpu_state, addr, NULL);
+
     void(* func_p)(void*);
     *((void**) &func_p) = (void*) func;
     func_p(cpu_regs);
