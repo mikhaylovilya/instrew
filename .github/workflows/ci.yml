@@ -1,0 +1,28 @@
+name: Self-Hosted Test CI
+
+on:
+  push:
+    branches:
+    - "tmp-host-riscv64"
+
+jobs:
+  build:  
+    runs-on: [self-hosted, linux, RISCV64]
+    steps:
+#      - name: Update & Upgrade
+#        run: sudo apt update && sudo apt upgrade --yes
+      - name: Test command 
+        run: uname -a
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Dependencies
+        run: sudo apt install meson llvm-18-dev lld-18 libssl-dev pkg-config clang-18 --yes 
+      - name: Update alternatives
+        run: |
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-18 18 
+          sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-18 18 
+          sudo update-alternatives --install /usr/bin/lld lld /usr/bin/lld-18 18 
+      - name: Build
+        run: |
+          meson setup build
+          ninja -C build test
