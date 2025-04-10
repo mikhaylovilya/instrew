@@ -11,8 +11,18 @@ PLT_ENTRY("__muldi3", __muldi3) // libgcc
 PLT_ENTRY("__multi3", __multi3) // libgcc
 PLT_ENTRY("__umoddi3", __umoddi3) // libgcc
 PLT_ENTRY("__udivdi3", __udivdi3) // libgcc
+PLT_ENTRY("__divdi3", __divdi3) // libgcc
+PLT_ENTRY("__moddi3", __moddi3) // libgcc
 PLT_ENTRY("__atomic_fetch_add_4", __atomic_fetch_add_4)
+PLT_ENTRY("__atomic_fetch_add_8", __atomic_fetch_add_8)
+PLT_ENTRY("__atomic_fetch_sub_4", __atomic_fetch_sub_4)
+PLT_ENTRY("__atomic_fetch_sub_8", __atomic_fetch_sub_8)
+PLT_ENTRY("__atomic_fetch_or_4", __atomic_fetch_or_4)
+PLT_ENTRY("__atomic_fetch_or_8", __atomic_fetch_or_8)
 PLT_ENTRY("__atomic_exchange_4", __atomic_exchange_4)
+PLT_ENTRY("__atomic_exchange_8", __atomic_exchange_8)
+PLT_ENTRY("__atomic_compare_exchange_4", __atomic_compare_exchange_4)
+PLT_ENTRY("__atomic_compare_exchange_8", __atomic_compare_exchange_8)
 #endif //defined(__riscv)
 PLT_ENTRY("floorf", floorf) // math.c
 PLT_ENTRY("floor", floor) // math.c
