@@ -8,7 +8,7 @@ NOT_IMPLEMENTED_STR: .string "Not implemented\n\0"
 
 .global not_implemented
 not_implemented:
-  li      a7, 64 # write on RISCV linux"
+  li      a7, 64 # write on RISCV linux
   li      a0, 1 # stdout
   la      a1, NOT_IMPLEMENTED_STR
   li      a2, 16
@@ -96,7 +96,7 @@ trace_variable:
   ld a2, 8(sp)
   call memcpy
 
-  li      a7, 64  # write on RISCV linux"
+  li      a7, 64  # write on RISCV linux
   li      a0, 1
   la      a1, str2
   li      a2, BUFSIZE+1
@@ -118,7 +118,7 @@ print_int:
   ld a0, 8(sp)
   call myitoa
 
-  li      a7, 64  # write on RISCV linux"
+  li      a7, 64  # write on RISCV linux
   li      a0, 1
   la      a1, str2
   li      a2, BUFSIZE+1

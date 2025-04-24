@@ -21,9 +21,9 @@ client_c_args = ['-D_GNU_SOURCE', '-nostdlib', '-fno-builtin',
 client_link_args = ['-nostdlib', '-nostartfiles', '-lgcc', '-latomic']
 
 cc = meson.get_compiler('c')
-if host_machine.cpu_family() == 'riscv64'
+if host_machine.cpu_family() == 'riscv64' and cc.get_id() == 'gcc' and cc.version() == '12'
    client_link_args += ['-static-pie', '-Wl,-static', '-Wl,-pie', '-Wl,--no-dynamic-linker', '-Wl,-z,text']
-elif
+else
    if cc.has_argument('-static-pie')
       client_link_args += ['-static-pie']
    else

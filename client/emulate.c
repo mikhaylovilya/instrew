@@ -248,9 +248,11 @@ handle_clone(struct State* state, struct clone_args* uargs, size_t usize) {
     // clone(flags, stack, parent_tid, tls, child_tid)
     ssize_t res = syscall(__NR_clone, flags, 0, args.parent_tid, args.tls,
                           args.child_tid, 0);
-#else
+#elif defined(__riscv)
     ssize_t res = syscall(__NR_clone, flags, 0, args.parent_tid, args.tls,
                           args.child_tid, 0);
+#else
+#error "clone not implemented for target"
 #endif
 
     if (res < 0) {
@@ -477,7 +479,7 @@ emulate_syscall(uint64_t* cpu_regs) {
     case 82: // rename
 #ifdef __riscv
 	res = syscall(__NR_renameat2, AT_FDCWD, arg0, AT_FDCWD, arg1, 0, 0);
-#elif
+#else
         res = syscall(__NR_renameat, AT_FDCWD, arg0, AT_FDCWD, arg1, 0, 0);
 #endif
         break;
@@ -764,7 +766,7 @@ emulate_syscall_generic(struct CpuState* cpu_state, uint64_t* resp, uint64_t nr,
 	nr = __NR_renameat2;
 	arg5 = 0;
 #endif
-#elif
+#else
 	nr = __NR_renameat; 
 #endif
 	goto native;

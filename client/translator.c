@@ -42,7 +42,7 @@ static int32_t translator_hdr_recv(Translator* t, uint32_t id) {
 int translator_init(Translator* t, const char* server_config,
                     const struct TranslatorServerConfig* tsc) {
     int socket = 0;
-    for (size_t i = 0; server_config[i]; i++) 
+    for (size_t i = 0; server_config[i]; i++)
         socket = socket * 10 + server_config[i] - '0';
     t->socket = socket;
 
