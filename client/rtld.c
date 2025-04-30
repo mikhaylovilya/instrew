@@ -358,6 +358,8 @@ rtld_reloc_at(const struct RtldPatchData* patch_data, void* tgt, void* sym) {
     uint64_t syma = (uintptr_t) sym + patch_data->addend;
     uint64_t pc = patch_data->patch_addr;
     int64_t prel_syma = syma - (int64_t) pc;
+	
+	printf("rel: %u, tgt: %p, sym: %p, addend: %p, syma: %p, pc: %p, prel_syma: %p\n", patch_data->rel_type, *(uint64_t*)tgt,(uintptr_t)sym, patch_data->addend, syma, pc, prel_syma);
 
     switch (patch_data->rel_type) {
 #if defined(__x86_64__)
@@ -468,30 +470,36 @@ rtld_reloc_at(const struct RtldPatchData* patch_data, void* tgt, void* sym) {
 		rtld_blend(tgt, 0xfffff000, prel_syma + 0x800);
 		break;
 	case R_RISCV_SET6:
-		rtld_blend(tgt, 0xff >> 2, syma);
+		rtld_blend(tgt, 0x3f, syma);
 		break;
 	case R_RISCV_SUB6:
-		*((uint8_t*)tgt) -= syma;
+//		uint8_t *res = *((uint8_t*)tgt);
+//		*res = (res - ((uint8_t)syma & 0x3f)) & 0x3f;
+		*((uint8_t*)tgt) = (*(uint8_t*)tgt - ((uint8_t)syma & 0x3f)) & 0x3f;
 		break;
 	case R_RISCV_SET8:
 		rtld_blend(tgt, 0xff, syma);
 		break;
 	case R_RISCV_SUB8:
-		*((uint8_t*)tgt) -= syma;
+		*((uint8_t*)tgt) -= (uint8_t)syma;
 		break;
 	case R_RISCV_SET16:
 		rtld_blend(tgt, 0xffff, syma);
 		break;
 	case R_RISCV_SUB16:
-		*((uint16_t*)tgt) -= syma;
+		*((uint16_t*)tgt) -= (uint16_t)syma;
 		break;
 	case R_RISCV_PCREL_HI20:
-		if (!rtld_elf_signed_range(prel_syma, 32, "R_RISCV_CALL_PLT"))
+		if (!rtld_elf_signed_range(prel_syma, 32, "R_RISCV_PCREL_HI20"))
 			return -EINVAL;
 		rtld_blend(tgt + 4, 0xfff00000 , prel_syma << 20);
 		rtld_blend(tgt, 0xfffff000, prel_syma + 0x800);
+//		rtld_blend(tgt, 0xfffff000, (prel_syma + 0x800) & 0xfffff000);
 		break;
 	case R_RISCV_PCREL_LO12_I:
+		if (!rtld_elf_signed_range(prel_syma, 32, "R_RISCV_PCREL_LO12_I"))
+			return -EINVAL;
+//		rtld_blend(tgt, 0xfff00000, (((uint64_t)((uintptr_t)sym - pc)) /*(prel_syma & 0xfff)*/ & 0xfff) << 20 );
 		break;
 #endif
     default:
@@ -499,6 +507,7 @@ rtld_reloc_at(const struct RtldPatchData* patch_data, void* tgt, void* sym) {
         return -EINVAL;
     }
 
+	printf("tgt after: %p\n", *(uint64_t*)tgt);
     return 0;
 }
 
