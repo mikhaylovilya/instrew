@@ -49,3 +49,6 @@ client = executable('instrew-client', sources,
                     override_options: ['b_sanitize=none'])
 
 test('mathlib', executable('test_mathlib', 'math.c', c_args: ['-DTEST', '-fno-builtin']), protocol: 'tap')
+# test('rtldlib', executable('test_rtldlib', 
+# 	'rtld.c', include_directories: include_directories('.'), 
+# 	c_args: client_c_args + '-DTEST', link_args: client_link_args), protocol: 'tap')
