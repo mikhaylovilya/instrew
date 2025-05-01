@@ -32,6 +32,8 @@
             ((val) >= -(1ll << (bits-1)) && (val) < (1ll << (bits-1))-1)
 #define CHECK_UNSIGNED_BITS(val,bits) ((val) < (1ull << (bits))-1)
 
+// #define RTLD_DEBUG
+
 static bool
 rtld_elf_signed_range(int64_t val, unsigned bits, const char* relinfo) {
     if (!CHECK_SIGNED_BITS(val, bits)) {
@@ -354,12 +356,14 @@ rtld_elf_add_stub(uintptr_t sym, uintptr_t* out_stub) {
 #endif
 
 static int
-rtld_reloc_at(const struct RtldPatchData* patch_data, void* tgt, void* sym) {
+rtld_reloc_at(struct RtldPatchData* patch_data, void* tgt, void* sym, struct RtldPatchData* pending_reloc, void* pending_sym) {
     uint64_t syma = (uintptr_t) sym + patch_data->addend;
     uint64_t pc = patch_data->patch_addr;
     int64_t prel_syma = syma - (int64_t) pc;
-	
+
+#if defined RTLD_DEBUG
 	printf("rel: %u, tgt: %p, sym: %p, addend: %p, syma: %p, pc: %p, prel_syma: %p\n", patch_data->rel_type, *(uint64_t*)tgt,(uintptr_t)sym, patch_data->addend, syma, pc, prel_syma);
+#endif
 
     switch (patch_data->rel_type) {
 #if defined(__x86_64__)
@@ -507,7 +511,9 @@ rtld_reloc_at(const struct RtldPatchData* patch_data, void* tgt, void* sym) {
         return -EINVAL;
     }
 
+#if defined RTLD_DEBUG
 	printf("tgt after: %p\n", *(uint64_t*)tgt);
+#endif
     return 0;
 }
 
