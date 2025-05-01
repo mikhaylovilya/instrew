@@ -496,14 +496,23 @@ rtld_reloc_at(struct RtldPatchData* patch_data, void* tgt, void* sym, struct Rtl
 	case R_RISCV_PCREL_HI20:
 		if (!rtld_elf_signed_range(prel_syma, 32, "R_RISCV_PCREL_HI20"))
 			return -EINVAL;
-		rtld_blend(tgt + 4, 0xfff00000 , prel_syma << 20);
-		rtld_blend(tgt, 0xfffff000, prel_syma + 0x800);
-//		rtld_blend(tgt, 0xfffff000, (prel_syma + 0x800) & 0xfffff000);
+		rtld_blend(tgt, 0xfffff000, (prel_syma & 0x800) & 0xfffff000);
+
+		*pending_reloc = *patch_data;
+		*(int64_t*)pending_sym = (int64_t)prel_syma;
 		break;
 	case R_RISCV_PCREL_LO12_I:
 		if (!rtld_elf_signed_range(prel_syma, 32, "R_RISCV_PCREL_LO12_I"))
 			return -EINVAL;
-//		rtld_blend(tgt, 0xfff00000, (((uint64_t)((uintptr_t)sym - pc)) /*(prel_syma & 0xfff)*/ & 0xfff) << 20 );
+
+		if (pending_reloc && pending_sym) {
+//			printf("pending_reloc != 0, rel_type = %u\n", pending_reloc->rel_type);
+			if (pending_reloc->rel_type == R_RISCV_PCREL_HI20 && pending_reloc->patch_addr == (uintptr_t)sym) {
+//				printf("pending_reloc == R_RISCV_PCREL_HI20\n");
+				prel_syma = *(int64_t*)pending_sym;
+			}
+		}
+		rtld_blend(tgt, 0xfff00000, (prel_syma & 0xfff) << 20 );
 		break;
 #endif
     default:
@@ -541,6 +550,9 @@ rtld_elf_process_rela(RtldElf* re, int rela_idx) {
 
     unsigned symtab_idx = rela_shdr->sh_link;
 
+	struct RtldPatchData* pending_reloc = mem_alloc_data(sizeof(struct RtldPatchData*), getpagesize());
+	int64_t pending_sym;
+
     for (; elf_rela != elf_rela_end; ++elf_rela) {
         // TODO: ensure that size doesn't overflow
         if (elf_rela->r_offset >= tgt_shdr->sh_size)
@@ -559,7 +571,8 @@ rtld_elf_process_rela(RtldElf* re, int rela_idx) {
             return -EINVAL;
 
         uint8_t* tgt = sec_write_addr + elf_rela->r_offset;
-        int retval = rtld_reloc_at(&reloc_patch, tgt, (void*) sym);
+
+        int retval = rtld_reloc_at(&reloc_patch, tgt, (void*) sym, pending_reloc, &pending_sym);
         if (retval < 0)
             return retval;
     }
@@ -868,6 +881,6 @@ rtld_patch(struct RtldPatchData* patch_data, void* sym) {
     if (patch_data->rel_size > sizeof reloc_buf)
         return;
     memcpy(reloc_buf, (void*) patch_data->patch_addr, patch_data->rel_size);
-    (void) rtld_reloc_at(patch_data, reloc_buf, sym);
+    (void) rtld_reloc_at(patch_data, reloc_buf, sym, NULL, NULL);
     mem_write_code((void*) patch_data->patch_addr, reloc_buf, patch_data->rel_size);
 }
