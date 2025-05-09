@@ -32,7 +32,7 @@
             ((val) >= -(1ll << (bits-1)) && (val) < (1ll << (bits-1))-1)
 #define CHECK_UNSIGNED_BITS(val,bits) ((val) < (1ull << (bits))-1)
 
-// #define RTLD_DEBUG
+//#define RTLD_DEBUG
 
 static bool
 rtld_elf_signed_range(int64_t val, unsigned bits, const char* relinfo) {
@@ -355,8 +355,13 @@ rtld_elf_add_stub(uintptr_t sym, uintptr_t* out_stub) {
 }
 #endif
 
+struct RtldPendingReloc {
+	struct RtldPatchData patch_data;
+	int64_t sym;
+};
+
 static int
-rtld_reloc_at(struct RtldPatchData* patch_data, void* tgt, void* sym, struct RtldPatchData* pending_reloc, void* pending_sym) {
+rtld_reloc_at(struct RtldPatchData* patch_data, void* tgt, void* sym, struct RtldPendingReloc **pending_relocs) {
     uint64_t syma = (uintptr_t) sym + patch_data->addend;
     uint64_t pc = patch_data->patch_addr;
     int64_t prel_syma = syma - (int64_t) pc;
@@ -498,19 +503,30 @@ rtld_reloc_at(struct RtldPatchData* patch_data, void* tgt, void* sym, struct Rtl
 			return -EINVAL;
 		rtld_blend(tgt, 0xfffff000, (prel_syma & 0x800) & 0xfffff000);
 
-		*pending_reloc = *patch_data;
-		*(int64_t*)pending_sym = (int64_t)prel_syma;
+		struct RtldPendingReloc *pcrel_hi20_reloc = mem_alloc_data(sizeof(struct RtldPendingReloc), getpagesize());
+		pcrel_hi20_reloc->patch_data = *patch_data;
+		pcrel_hi20_reloc->sym = (int64_t)prel_syma;
+
+		pending_relocs[0] = pcrel_hi20_reloc;
 		break;
 	case R_RISCV_PCREL_LO12_I:
 		if (!rtld_elf_signed_range(prel_syma, 32, "R_RISCV_PCREL_LO12_I"))
 			return -EINVAL;
 
-		if (pending_reloc && pending_sym) {
-//			printf("pending_reloc != 0, rel_type = %u\n", pending_reloc->rel_type);
-			if (pending_reloc->rel_type == R_RISCV_PCREL_HI20 && pending_reloc->patch_addr == (uintptr_t)sym) {
-//				printf("pending_reloc == R_RISCV_PCREL_HI20\n");
-				prel_syma = *(int64_t*)pending_sym;
+		if (pending_relocs && pending_relocs[0]) {
+#if defined RTLD_DEBUG
+			printf("pending_relocs != 0, rel_type = %u\n", pending_relocs[0]->patch_data.rel_type);
+#endif
+			if (pending_relocs[0]->patch_data.rel_type == R_RISCV_PCREL_HI20 && pending_relocs[0]->patch_data.patch_addr == (uintptr_t)sym) {
+#if defined RTLD_DEBUG
+				printf("pending_relocs == R_RISCV_PCREL_HI20\n");
+#endif
+				prel_syma = pending_relocs[0]->sym;
 			}
+		} else {
+#if defined RTLD_DEBUG
+			printf("!pending_relocs\n");
+#endif
 		}
 		rtld_blend(tgt, 0xfff00000, (prel_syma & 0xfff) << 20 );
 		break;
@@ -525,6 +541,8 @@ rtld_reloc_at(struct RtldPatchData* patch_data, void* tgt, void* sym, struct Rtl
 #endif
     return 0;
 }
+
+
 
 static int
 rtld_elf_process_rela(RtldElf* re, int rela_idx) {
@@ -550,8 +568,11 @@ rtld_elf_process_rela(RtldElf* re, int rela_idx) {
 
     unsigned symtab_idx = rela_shdr->sh_link;
 
-	struct RtldPatchData* pending_reloc = mem_alloc_data(sizeof(struct RtldPatchData*), getpagesize());
-	int64_t pending_sym;
+	size_t pending_relocs_count = rela_shdr->sh_size / sizeof(Elf64_Rela);
+#if defined RTLD_DEBUG
+	printf("rela_shdr->sh_size: %u\n", pending_relocs_count);
+#endif
+	struct RtldPendingReloc **pending_relocs = mem_alloc_data(pending_relocs_count * sizeof(struct RtldPendingReloc*), getpagesize());
 
     for (; elf_rela != elf_rela_end; ++elf_rela) {
         // TODO: ensure that size doesn't overflow
@@ -572,7 +593,7 @@ rtld_elf_process_rela(RtldElf* re, int rela_idx) {
 
         uint8_t* tgt = sec_write_addr + elf_rela->r_offset;
 
-        int retval = rtld_reloc_at(&reloc_patch, tgt, (void*) sym, pending_reloc, &pending_sym);
+        int retval = rtld_reloc_at(&reloc_patch, tgt, (void*) sym, pending_relocs);
         if (retval < 0)
             return retval;
     }
@@ -881,6 +902,6 @@ rtld_patch(struct RtldPatchData* patch_data, void* sym) {
     if (patch_data->rel_size > sizeof reloc_buf)
         return;
     memcpy(reloc_buf, (void*) patch_data->patch_addr, patch_data->rel_size);
-    (void) rtld_reloc_at(patch_data, reloc_buf, sym, NULL, NULL);
+    (void) rtld_reloc_at(patch_data, reloc_buf, sym, NULL);
     mem_write_code((void*) patch_data->patch_addr, reloc_buf, patch_data->rel_size);
 }
