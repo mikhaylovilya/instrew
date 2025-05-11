@@ -32,7 +32,7 @@
             ((val) >= -(1ll << (bits-1)) && (val) < (1ll << (bits-1))-1)
 #define CHECK_UNSIGNED_BITS(val,bits) ((val) < (1ull << (bits))-1)
 
-//#define RTLD_DEBUG
+// #define RTLD_DEBUG
 
 static bool
 rtld_elf_signed_range(int64_t val, unsigned bits, const char* relinfo) {
@@ -361,7 +361,7 @@ struct RtldPendingReloc {
 };
 
 static int
-rtld_reloc_at(struct RtldPatchData* patch_data, void* tgt, void* sym, struct RtldPendingReloc **pending_relocs) {
+rtld_reloc_at(struct RtldPatchData* patch_data, void* tgt, void* sym, struct RtldPendingReloc **pending_relocs, uint64_t *pending_relocs_length) {
     uint64_t syma = (uintptr_t) sym + patch_data->addend;
     uint64_t pc = patch_data->patch_addr;
     int64_t prel_syma = syma - (int64_t) pc;
@@ -508,20 +508,28 @@ rtld_reloc_at(struct RtldPatchData* patch_data, void* tgt, void* sym, struct Rtl
 		pcrel_hi20_reloc->sym = (int64_t)prel_syma;
 
 		pending_relocs[0] = pcrel_hi20_reloc;
+		(*pending_relocs_length)++;
 		break;
 	case R_RISCV_PCREL_LO12_I:
 		if (!rtld_elf_signed_range(prel_syma, 32, "R_RISCV_PCREL_LO12_I"))
 			return -EINVAL;
 
-		if (pending_relocs && pending_relocs[0]) {
+		if (pending_relocs && pending_relocs_length) {
 #if defined RTLD_DEBUG
-			printf("pending_relocs != 0, rel_type = %u\n", pending_relocs[0]->patch_data.rel_type);
+			printf("pending_relocs != 0, pending_relocs_length != 0\n");
 #endif
-			if (pending_relocs[0]->patch_data.rel_type == R_RISCV_PCREL_HI20 && pending_relocs[0]->patch_data.patch_addr == (uintptr_t)sym) {
+			for (int i = *pending_relocs_length; i >= 0; i--) {
+				if (!pending_relocs[i])
+					continue;
 #if defined RTLD_DEBUG
-				printf("pending_relocs == R_RISCV_PCREL_HI20\n");
+				printf("pending_relocs[i] != 0, rel_type = %u\n", pending_relocs[i]->patch_data.rel_type);
 #endif
-				prel_syma = pending_relocs[0]->sym;
+				if (pending_relocs[i]->patch_data.rel_type == R_RISCV_PCREL_HI20 && pending_relocs[i]->patch_data.patch_addr == (uintptr_t)sym) {
+#if defined RTLD_DEBUG
+					printf("pending_relocs == R_RISCV_PCREL_HI20\n");
+#endif
+					prel_syma = pending_relocs[i]->sym;
+				}
 			}
 		} else {
 #if defined RTLD_DEBUG
@@ -572,6 +580,7 @@ rtld_elf_process_rela(RtldElf* re, int rela_idx) {
 	printf("rela_shdr->sh_size: %u\n", pending_relocs_count);
 #endif
 	struct RtldPendingReloc **pending_relocs = mem_alloc_data(pending_relocs_count * sizeof(struct RtldPendingReloc*), getpagesize());
+	uint64_t pending_relocs_length = 0;
 
     for (; elf_rela != elf_rela_end; ++elf_rela) {
         // TODO: ensure that size doesn't overflow
@@ -592,7 +601,7 @@ rtld_elf_process_rela(RtldElf* re, int rela_idx) {
 
         uint8_t* tgt = sec_write_addr + elf_rela->r_offset;
 
-        int retval = rtld_reloc_at(&reloc_patch, tgt, (void*) sym, pending_relocs);
+        int retval = rtld_reloc_at(&reloc_patch, tgt, (void*) sym, pending_relocs, &pending_relocs_length);
         if (retval < 0)
             return retval;
     }
@@ -901,6 +910,6 @@ rtld_patch(struct RtldPatchData* patch_data, void* sym) {
     if (patch_data->rel_size > sizeof reloc_buf)
         return;
     memcpy(reloc_buf, (void*) patch_data->patch_addr, patch_data->rel_size);
-    (void) rtld_reloc_at(patch_data, reloc_buf, sym, NULL);
+    (void) rtld_reloc_at(patch_data, reloc_buf, sym, NULL, NULL);
     mem_write_code((void*) patch_data->patch_addr, reloc_buf, patch_data->rel_size);
 }
