@@ -39,6 +39,10 @@ enum class DumpIR {
     Lift, CC, Opt, CodeGen,
 };
 
+enum class Logger {
+	All, Rtld, Dispatch
+};
+
 llvm::cl::opt<bool> enableProfiling("profile", llvm::cl::desc("Profile translation"), llvm::cl::cat(InstrewCategory));
 llvm::cl::opt<bool> enableTracing("trace", llvm::cl::desc("Trace execution (lots of logs)"), llvm::cl::cat(InstrewCategory));
 llvm::cl::opt<unsigned char> perfSupport("perf", llvm::cl::desc("Enable perf support:"),
@@ -61,6 +65,12 @@ llvm::cl::opt<bool> enableCallret("callret", llvm::cl::desc("Enable call-ret lif
 llvm::cl::opt<bool> enableFastcc("fastcc", llvm::cl::desc("Enable register-based calling convention (default: true)"), llvm::cl::init(true), llvm::cl::cat(CodeGenCategory));
 llvm::cl::opt<bool> enablePIC("pic", llvm::cl::desc("Compile code position-independent"), llvm::cl::cat(CodeGenCategory));
 
+llvm::cl::bits<Logger> enableLogger("logger", llvm::cl::desc("enable logger for following modules:"),
+	llvm::cl::values(
+		clEnumValN(Logger::All, "all", "all modules"),
+		clEnumValN(Logger::Rtld, "rtld", "rtld.c"),
+		clEnumValN(Logger::Dispatch, "dispatch", "dispatch.c")
+	), llvm::cl::cat(InstrewCategory));
 } // end anonymous namespace
 
 #define SPTR_ADDR_SPACE 1
@@ -198,6 +208,13 @@ public:
         iwcc->tc_profile = enableProfiling;
         iwcc->tc_perf = perfSupport;
         iwcc->tc_print_trace = enableTracing;
+		
+		if (enableLogger.isSet(Logger::All))
+			iwcc->tc_logger = 1;
+		if (enableLogger.isSet(Logger::Rtld))
+			iwcc->tc_logger = 2;
+		if (enableLogger.isSet(Logger::Dispatch))
+			iwcc->tc_logger = 3;
 
         llvm::GlobalVariable* pc_base_var = CreatePcBase(ctx);
         pc_base = llvm::ConstantExpr::getPtrToInt(pc_base_var,

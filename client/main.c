@@ -11,6 +11,7 @@
 #include <rtld.h>
 #include <state.h>
 #include <translator.h>
+#include <logger.h>
 
 #define PLATFORM_STRING "x86_64"
 
@@ -141,6 +142,11 @@ int main(int argc, char** argv) {
     if (retval < 0) {
         puts("warning: could not initialize perf support");
     }
+
+	retval = logger_init(state.tc.tc_logger);
+	if (retval < 0) {
+		puts("warning: could not initialize logger");
+	}
 
     void* initobj;
     size_t initobj_size;

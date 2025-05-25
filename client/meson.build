@@ -8,6 +8,7 @@ sources = [
     'minilibc.c',
     'rtld.c',
     'translator.c',
+	'logger.c'
 ]
 
 if host_machine.cpu_family() == 'aarch64'
