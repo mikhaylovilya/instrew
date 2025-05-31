@@ -337,7 +337,7 @@ __clone:
 
 ASM_BLOCK(
     .globl __restore;
-    .type __rectore, %function;
+    .type __restore, %function;
 __restore:
     li a0, __NR_rt_sigreturn;
     ecall;
