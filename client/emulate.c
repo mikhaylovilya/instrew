@@ -451,15 +451,20 @@ emulate_syscall(uint64_t* cpu_regs) {
     case 230: nr = __NR_clock_nanosleep; goto native;
     case 257: goto common_openat;
     case 260: nr = __NR_fchownat; goto native;
+    case 263: nr = __NR_unlinkat; goto native;
+    case 267: nr = __NR_readlinkat; goto native;
     case 268: nr = __NR_fchmodat; goto native;
+    case 269: nr = __NR_faccessat; goto native;
     case 270: nr = __NR_pselect6; goto native;
     case 271: nr = __NR_ppoll; goto native;
     case 273: nr = __NR_set_robust_list; goto native;
     case 274: nr = __NR_get_robust_list; goto native;
+    case 280: nr = __NR_utimensat; goto native;
     case 292: nr = __NR_dup3; goto native;
     case 293: nr = __NR_pipe2; goto native;
     case 302: nr = __NR_prlimit64; goto native;
     case 318: nr = __NR_getrandom; goto native;
+    case 439: nr = __NR_faccessat2; goto native;
 
     // Some are too old to work on newer platforms, but have replacements.
     case 2: // open
